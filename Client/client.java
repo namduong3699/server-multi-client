@@ -11,7 +11,7 @@ class client {
             Console cons = System.console();
             ArrayList<SocketAddress> clients = null;
             String originalName = "";
-            String mySubFile = "";
+            String mySubFile;
 
             // Nhap ip cua server
             String ip = cons.readLine("Enter IP address: ");
@@ -36,10 +36,19 @@ class client {
 
             // getListFile(sc);
             originalName = getOriginalName(sc);
-            clients= getClientInfo(sc);
-            receiveFile(sc);
-            // getSubFile(clients);
-            new SendSubFile(mySubFile).start();
+            clients = getClientInfo(sc);
+            clients.remove(sc.getLocalAddress());
+
+            mySubFile = receiveFile(sc);
+            int localPort = getPort(sc.getLocalAddress()) + 10;
+            SendSubFile sendFile = new SendSubFile(localPort, mySubFile);
+            GetSubFile getFile = new GetSubFile(clients, originalName);
+            sendFile.start();
+            Thread.sleep(1000);
+            getFile.start();
+            
+            
+
 
         } catch (Exception e) {
             System.out.println("Server Unreachable. Closing program..");
@@ -57,6 +66,7 @@ class client {
     }
 
     public static String receiveFile(SocketChannel sc) throws Exception {
+        System.out.println("Receiving file...");
         String subFolder = "SubFiles";
         String fileName = "";
         ByteBuffer buff = ByteBuffer.allocate(65535); // read
@@ -73,6 +83,7 @@ class client {
                 try {
                     // gui server thong diep san sang nhan kich thuoc file
                     String sendIt = "sendit";
+                    buffer = ByteBuffer.allocate(4096);
                     buffer = ByteBuffer.wrap(sendIt.getBytes());
                     sc.write(buffer);
 
@@ -111,7 +122,7 @@ class client {
                     }
                     fc.close();
                     System.out.println("Success!");
-                    
+
                 } catch (NumberFormatException nfe) {
                     System.out.println("Error");
                 }
@@ -119,7 +130,7 @@ class client {
                 System.out.println("There was an error retrieving the file");
             }
         }
-        return subFolder + "/" + fileName;
+        return fileName;
     }
 
     public static String getOriginalName(SocketChannel sc) throws IOException {
@@ -137,10 +148,6 @@ class client {
         InputStream inputStream = sc.socket().getInputStream();
         ObjectInputStream ois = new ObjectInputStream(inputStream);
         clients = (ArrayList<SocketAddress>) ois.readObject();
-        // clients.remove(sc.getLocalAddress());
-        for (SocketAddress socketAddress : clients) {
-            System.out.println("Clientn: " + socketAddress.toString());
-        }
         System.out.println("Clients : " + clients.toString());
         return clients;
     }
@@ -163,4 +170,45 @@ class client {
         }
     }
 
+    public static void getSubFile(ArrayList<SocketAddress> clients) {
+        try {
+            for (SocketAddress socketAddress : clients) {
+                String ip = getIp(socketAddress);
+                int port = getPort(socketAddress) + 10;
+                SocketChannel sc = SocketChannel.open();
+                System.out.println("Try to connect Subfile server :" + ip + "/" + port);
+                sc.connect(new InetSocketAddress(ip, port));
+                System.out.println("Connected Subfile server :" + ip + "/" + port);
+                receiveFile(sc);
+            }
+        } catch (Exception e) {
+            System.out.println("Error to connect Subfile server");
+            e.printStackTrace();
+        }
+    }
+
+    public static String getIp(SocketAddress sa) {
+        String ip = "";
+        String address = sa.toString();
+        for(int i = 0; i < address.length(); i++) {
+            if(i > address.indexOf("/") && i < address.indexOf(":")) {
+                ip += address.charAt(i);
+            }
+        }
+        return ip;
+    }
+
+    public static int getPort(SocketAddress sa) {
+        String port = "";
+        String address = sa.toString();
+        for(int i = 0; i < address.length(); i++) {
+            if(i > address.indexOf(":")) {
+                port += address.charAt(i);
+            }
+        }
+        return Integer.parseInt(port);
+    }
+
+
 }
+

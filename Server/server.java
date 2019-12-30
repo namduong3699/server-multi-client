@@ -2,8 +2,6 @@ import java.io.*;
 import java.net.*;
 import java.nio.*;
 import java.nio.channels.*;
-import java.nio.file.Path.*;
-import java.nio.file.*;
 import java.util.ArrayList;
 
 class server {
@@ -11,7 +9,7 @@ class server {
     public static void main(String args[]) {
         ArrayList<SocketAddress> clients = new ArrayList<SocketAddress>();
         ArrayList<SocketChannel> list = new ArrayList<SocketChannel>();
-        int clientLimit = 2;
+        int clientLimit = 3;
         boolean isMax = false;
 
         try {
@@ -45,7 +43,7 @@ class server {
                 }
                 if (isMax) {
                     String folderName = "SharedFolder";
-                    String fileName = "frame.png";
+                    String fileName = "file.doc";
                     ArrayList<File> files = splitFile(folderName + "/" + fileName, clientLimit);
                     // sendListFile(list);
                     sendOriginalName(fileName, list);
@@ -54,7 +52,7 @@ class server {
 
                 }
             }
-        } catch (IOException e) {
+        } catch (Exception e) {
             System.out.println("Got an IO exception. Closing program...");
             e.printStackTrace();
             return;
@@ -70,7 +68,7 @@ class server {
                 System.out.println("Sending clients info to " + socketChannel.getRemoteAddress());
                 // oos.close();
             }
-        } catch (IOException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
@@ -128,6 +126,7 @@ class server {
                 // gui do dai tep va doi cho den khi client chap nhan
                 Long size = file.length();
                 String fileSize = size.toString();
+                buffer = ByteBuffer.allocate(4096);
                 buffer = ByteBuffer.wrap(fileSize.getBytes());
                 sc.write(buffer);
 

@@ -2,38 +2,23 @@ import java.io.*;
 import java.net.*;
 import java.nio.*;
 import java.nio.channels.*;
-import java.util.ArrayList;
 
-class SendSubFile extends Thread {
+class SubServer extends Thread {
     private String fileName = "";
     private SocketChannel sc = null;
     private String subFolder = "SubFiles";
-    private ServerSocketChannel subServer = null;
-    private int port;
 
-    public SendSubFile(int port, String fileName) {
+    public SubServer(SocketChannel socketChannel, String fileName) {
         this.fileName = fileName;
-        this.port = port;
+        this.sc = socketChannel;
     }
 
     @Override
     public void run() {
-        try {
-            subServer = ServerSocketChannel.open();
-            subServer.bind(new InetSocketAddress(port));
-            System.out.println("Subfile server start at: " + subServer.socket().getLocalPort());
-            // notify();
-            while (true) {
-                SocketChannel sc = subServer.accept();
-                if (sc != null) {
-                    System.out.println("A client connected!");
-                }
-                
-                sendFile(sc, fileName, subFolder);
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }        
+        while (true) {
+            sendFile(sc, fileName, subFolder);
+        }
+        
     }
 
     public static void sendFile(SocketChannel sc, String fileName, String subFolder) {
@@ -59,7 +44,7 @@ class SendSubFile extends Thread {
             sc.write(buffer);
 
             // Gui ten subFile
-            buffer = ByteBuffer.allocate(8192);
+            buffer = ByteBuffer.allocate(4096);
             buffer = ByteBuffer.wrap(fileName.getBytes());
             sc.write(buffer);
 
